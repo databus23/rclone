@@ -407,9 +407,19 @@ func (f *Fs) list(prefix string, limit int, hidden bool, fn listFn) error {
 func (f *Fs) List(out fs.ListOpts) {
 	defer out.Finished()
 	if f.bucket == "" {
-		out.SetError(fmt.Errorf("Can't list objects at root - choose a bucket using lsd"))
-		// Return no objects at top level list
-		fs.Stats.Error()
+		err := f.listBuckets(func(bucket *api.Bucket) {
+			out.AddDir(&fs.Dir{
+				Name:  bucket.Name,
+				Bytes: -1,
+				Count: -1,
+			})
+		})
+
+		if err != nil {
+			out.SetError(err)
+			// Return no objects at top level list
+			fs.Stats.Error()
+		}
 		return
 	}
 	// List the objects
@@ -486,6 +496,7 @@ func (f *Fs) clearBucketID() {
 	f.bucketIDMutex.Unlock()
 }
 
+/*
 // ListDir lists the buckets
 func (f *Fs) ListDir(out fs.ListDirOpts) {
 	defer out.Finished()
@@ -530,6 +541,7 @@ func (f *Fs) ListDir(out fs.ListDirOpts) {
 		}
 	}
 }
+*/
 
 // Put the object into the bucket
 //
